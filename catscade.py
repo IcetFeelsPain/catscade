@@ -78,17 +78,42 @@ id = 0
 
 ## HOST COMMANDS
 
+admin = [487045257981067289]
+hosts = []
+canTrollbox = []
+
 @bot.slash_command(
-name="host",
-description="Set a player as a host",
+name="config",
+description="Change the permissions for a member",
 options=[
-    Option("player", "player", OptionType.user, True)
+    Option("player", "player", OptionType.user, True),
+    Option("permission", "permission", OptionType.string, True)
 ]
 )
 
-async def host():
-    pass
-
+async def config(inter, player, permission):
+    if inter.author.id not in admin:
+        await inter.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+    if permission == "host":
+        if player.id not in hosts:
+            hosts.append(player.id)
+            await inter.response.send_message(f"**{player.name}** is now a host!", ephemeral=True)
+        else:
+            hosts.remove(player.id)
+            await inter.response.send_message(f"**{player.name}** is no longer a host!", ephemeral=True)
+    elif permission == "trollbox":
+        if player.id not in canTrollbox:
+            canTrollbox.append(player.id)
+            await inter.response.send_message(f"**{player.name}** can now use **Trollbox**!", ephemeral=True)
+        else:
+            canTrollbox.remove(player.id)
+            await inter.response.send_message(f"**{player.name}** can no longer use **Trollbox**!", ephemeral=True)
+@config.autocomplete("permission")
+async def autoCompleteConfig(inter, string:str):
+    permissions = ["host", "trollbox"]
+    return permissions
+    
 @bot.slash_command( 
 name="set_channel",
 description="Set a channel to a specific type",
@@ -101,6 +126,9 @@ async def set_channel(inter, type):
     global gameChannels
     global hostChannel
 
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
     if type == "game":
         gameChannels = inter.channel
         await inter.response.send_message("Channel has been setup as the game channel!", ephemeral=True)
@@ -146,6 +174,9 @@ async def relaybase(inter):
 
 async def relay(inter, output:disnake.TextChannel, player, name, image_link="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664", hex="ffffff"):
     global id
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
     if player.id == 915388341736857630:
         await inter.response.send_message("You cannot create a relay with catscade.", ephemeral=True)
     else:
@@ -161,6 +192,9 @@ async def relay(inter, output:disnake.TextChannel, player, name, image_link="htt
     ]
 )
 async def del_relay(inter, id):
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
     idsToDel = []
     for i in links.values():
         i:NewRelay
@@ -176,6 +210,12 @@ async def del_relay(inter, id):
     description="View the current relays",
 )
 async def view_relays(inter):
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
+    if inter.channel != hostChannel:
+        await inter.response.send_message(f"This command can only be used in a host channel!", ephemeral=True)
+        return
     embed = disnake.Embed(title="Relays", colour=0xdefeff)
     for i in links.values():
         i:NewRelay
@@ -269,6 +309,9 @@ description="Create a whisper channel",
 )
 
 async def add_whisper(inter, player, nickname="catscade"):
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
     global whisperID
     if (nickname == "catscade"):
         nickname = player.name
@@ -291,6 +334,9 @@ description="Delete a whisper channel",
 )
 
 async def del_whisper(inter, id):
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
     idsToDel = []
     for i in whispers.values():
         i:Whisper
@@ -307,6 +353,12 @@ description="View the current whisper relays"
 )
 
 async def view_whispers(inter):
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
+    if inter.channel != hostChannel:
+        await inter.response.send_message(f"This command can only be used in a host channel!", ephemeral=True)
+        return
     embed = disnake.Embed(title="Whispers", colour=0xdefeff)
     for i in whispers.values():
         i:Whisper
@@ -314,6 +366,7 @@ async def view_whispers(inter):
         embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
     await inter.response.send_message(embed=embed)
 
+## TROLLBOX
 @bot.slash_command( 
 name="trollbox",
 description="Say something as another player",
@@ -324,6 +377,8 @@ description="Say something as another player",
 )
 
 async def trollbox(inter, player, message):
+    if inter.author.id not in canTrollbox:
+        await inter.response.send_message(f"You cannot Trollbox. Please DM the host if there is an issue.", ephemeral=True)
     relay:NewRelay = links[relaynick[player]]
     try:
         int(relay.hex, 16)
@@ -352,4 +407,4 @@ async def autoCompleteTrollbox(inter, string:str):
     canBeTrollboxed.sort()
     return canBeTrollboxed
 
-bot.run(os.environ["DISCORD_TOKEN"])
+bot.run(os.environ["TOKEN"])
