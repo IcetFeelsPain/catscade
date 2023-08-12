@@ -251,17 +251,18 @@ id = 0
 neighbourhoodOutputs = {}
 
 class Neighbourhood:
-    def __init__(self, input, player, name, link, hex) -> None:
+    def __init__(self, input, player, neighbourhood, name, link, hex) -> None:
         global id
         self.input:disnake.TextChannel = input
         self.id = id + 1
         self.player:disnake.Member = player
+        self.neighbourhood = neighbourhood
         self.name:str = name
         self.link:str = link
         self.hex = hex
         links[player.id] = self
         relaynick[name] = player.id
-        neighbourhoodOutputs[self.id] = input
+        neighbourhoodOutputs[input] = neighbourhood
 
 @bot.slash_command(name="neighbourhood")
 async def neighbourhoodbase(inter):
@@ -272,13 +273,14 @@ async def neighbourhoodbase(inter):
     description="Create a neighbourhood from this channel",
     options=[
             Option("player", "player", OptionType.user, True),
+            Option("neighbourhood", "neighbourhood", OptionType.string, True),
             Option("name", "name", OptionType.string, True),
             Option("image_link", "image_link", OptionType.string, False),
             Option("hex", "hexcode", OptionType.string, False)
         ]
 )
 
-async def neighbourhood(inter, player, name, image_link="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664", hex="ffffff"):
+async def neighbourhood(inter, player, neighbourhood, name, image_link="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664", hex="ffffff"):
     global id
     if inter.author.id not in hosts:
         await inter.response.send_message(f"You aren't a host!", ephemeral=True)
@@ -286,7 +288,7 @@ async def neighbourhood(inter, player, name, image_link="https://images-ext-2.di
     if player.id == 915388341736857630:
         await inter.response.send_message("You cannot create a neighbourhood with catscade.", ephemeral=True)
     else:
-        Neighbourhood(inter.channel, player, name, image_link, hex)
+        Neighbourhood(inter.channel, player, neighbourhood, name, image_link, hex)
         id += 1
         await inter.response.send_message("Neighbourhood created!", ephemeral=True)
 
@@ -333,8 +335,8 @@ async def view_neighbourhoods(inter):
 
 @bot.event
 async def on_message(message:disnake.Message):
-    if (message.author.id in links.keys()):
-        relay:NewRelay = links[message.author.id]
+    if (message.author.id in neighbourhoodLinks.keys()):
+        relay:Neighbourhood = neighbourhoodLinks[message.author.id]
         if (message.channel.id == relay.input.id):
             try:
                 int(relay.hex, 16)
@@ -347,8 +349,9 @@ async def on_message(message:disnake.Message):
                 embed.set_thumbnail(url=relay.link)
             except:
                 embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
-            for i in neighbourhoodOutputs.values():
-                await i.send(embed=embed)
+            for a, i in neighbourhoodOutputs.items():
+                if relay.neighbourhood == i:
+                    await a.send(embed=embed)
 
 ## WHISPERS
 
