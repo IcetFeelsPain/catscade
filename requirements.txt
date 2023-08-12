@@ -1,3 +1,2 @@
 disnake
-calendar
 datetime
