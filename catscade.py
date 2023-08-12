@@ -27,10 +27,6 @@ async def on_ready():
     act = Game(name="Anarchic")  
     await bot.change_presence(activity=act, status=Status.do_not_disturb)
 
-links = {}
-relaynick = {}
-id = 0
-
 # class Relay:
 #     def __init__(self, input, player, name, link, hook) -> None:
 #         self.input:disnake.TextChannel = input
@@ -143,6 +139,10 @@ async def autoCompleteSet_Channel(inter, string:str):
 
 ## RELAYS
 
+links = {}
+relaynick = {}
+id = 0
+
 class NewRelay:
     def __init__(self, input, player, name, link, output, hex) -> None:
         global id
@@ -202,6 +202,7 @@ async def del_relay(inter, id):
             idsToDel.append(i.player.id)
 
     del links[i.player.id]
+    del relaynick[i.name]
     
     await inter.response.send_message("Relay deleted!", ephemeral=True)
 
@@ -241,6 +242,113 @@ async def on_message(message:disnake.Message):
             except:
                 embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
                 await relay.output.send(embed=embed)
+
+## NEIGHBOURHOODS
+
+neighbourhoodLinks = {}
+neighbourhoodNick = {}
+id = 0
+neighbourhoodOutputs = {}
+
+class Neighbourhood:
+    def __init__(self, input, player, name, link, hex) -> None:
+        global id
+        self.input:disnake.TextChannel = input
+        self.id = id + 1
+        self.player:disnake.Member = player
+        self.name:str = name
+        self.link:str = link
+        self.hex = hex
+        links[player.id] = self
+        relaynick[name] = player.id
+        neighbourhoodOutputs[self.id] = input
+
+@bot.slash_command(name="neighbourhood")
+async def neighbourhoodbase(inter):
+    pass
+
+@neighbourhoodbase.sub_command(
+    name="create",
+    description="Create a neighbourhood from this channel",
+    options=[
+            Option("player", "player", OptionType.user, True),
+            Option("name", "name", OptionType.string, True),
+            Option("image_link", "image_link", OptionType.string, False),
+            Option("hex", "hexcode", OptionType.string, False)
+        ]
+)
+
+async def neighbourhood(inter, player, name, image_link="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664", hex="ffffff"):
+    global id
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
+    if player.id == 915388341736857630:
+        await inter.response.send_message("You cannot create a neighbourhood with catscade.", ephemeral=True)
+    else:
+        Neighbourhood(inter.channel, player, name, image_link, hex)
+        id += 1
+        await inter.response.send_message("Neighbourhood created!", ephemeral=True)
+
+@neighbourhoodbase.sub_command(
+    name="delete",
+    description="Delete a neighbourhood",
+    options=[
+        Option("id", "id", OptionType.integer, True)
+    ]
+)
+async def del_neighbourhood(inter, id):
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
+    idsToDel = []
+    for i in neighbourhoodLinks.values():
+        i:NewRelay
+        if i.id == id:
+            idsToDel.append(i.player.id)
+
+    del neighbourhoodLinks[i.player.id]
+    del neighbourhoodNick[i.name]
+    del neighbourhoodOutputs[i.id]
+    
+    await inter.response.send_message("Neighbourhood deleted!", ephemeral=True)
+
+@neighbourhoodbase.sub_command(
+    name="view",
+    description="View the current neighbourhoods",
+)
+async def view_neighbourhoods(inter):
+    if inter.author.id not in hosts:
+        await inter.response.send_message(f"You aren't a host!", ephemeral=True)
+        return
+    if inter.channel != hostChannel:
+        await inter.response.send_message(f"This command can only be used in a host channel!", ephemeral=True)
+        return
+    embed = disnake.Embed(title="Neighbourhoods", colour=0xdefeff)
+    for i in links.values():
+        i:NewRelay
+        embed.add_field(f"ID `{i.id}` | `{i.name}` for {i.player.name}", f"<a:hertaspin:1138251556991537233> from {i.input.mention}", inline=False)
+        embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
+    await inter.response.send_message(embed=embed)
+
+@bot.event
+async def on_message(message:disnake.Message):
+    if (message.author.id in links.keys()):
+        relay:NewRelay = links[message.author.id]
+        if (message.channel.id == relay.input.id):
+            try:
+                int(relay.hex, 16)
+            except:
+                relay.hex == "ffffff"
+            date = datetime.datetime.utcnow()
+            utc_time = calendar.timegm(date.utctimetuple())
+            embed = disnake.Embed(title=f"`{relay.name}` | <t:{utc_time}:t>", colour=int(relay.hex, 16), description=f"{message.content}")
+            try:
+                embed.set_thumbnail(url=relay.link)
+            except:
+                embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
+            for i in neighbourhoodOutputs.values():
+                await i.send(embed=embed)
 
 ## WHISPERS
 
