@@ -113,7 +113,7 @@ async def config(inter, player, permission):
 async def autoCompleteConfig(inter, string:str):
     permissions = ["host", "trollbox"]
     return permissions
-    
+
 @bot.slash_command( 
 name="set_channel",
 description="Set a channel to a specific type",
@@ -407,4 +407,4 @@ async def autoCompleteTrollbox(inter, string:str):
     canBeTrollboxed.sort()
     return canBeTrollboxed
 
-bot.run(os.environ["TOKEN"])
+bot.run(os.environ["DISCORD_TOKEN"])
