@@ -243,6 +243,24 @@ async def on_message(message:disnake.Message):
                 embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
                 await relay.output.send(embed=embed)
 
+    if (message.author.id in neighbourhoodLinks.keys()):
+        relay:Neighbourhood = neighbourhoodLinks[message.author.id]
+        if (message.channel.id == relay.input.id):
+            try:
+                int(relay.hex, 16)
+            except:
+                relay.hex == "ffffff"
+            date = datetime.datetime.utcnow()
+            utc_time = calendar.timegm(date.utctimetuple())
+            embed = disnake.Embed(title=f"`{relay.name}` | <t:{utc_time}:t>", colour=int(relay.hex, 16), description=f"{message.content}")
+            try:
+                embed.set_thumbnail(url=relay.link)
+            except:
+                embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
+            for a, i in neighbourhoodOutputs.items():
+                if relay.neighbourhood == i:
+                    await a.send(embed=embed)
+
 ## NEIGHBOURHOODS
 
 neighbourhoodLinks = {}
@@ -333,25 +351,6 @@ async def view_neighbourhoods(inter):
         embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
     await inter.response.send_message(embed=embed)
 
-@bot.event
-async def on_message(message:disnake.Message):
-    if (message.author.id in neighbourhoodLinks.keys()):
-        relay:Neighbourhood = neighbourhoodLinks[message.author.id]
-        if (message.channel.id == relay.input.id):
-            try:
-                int(relay.hex, 16)
-            except:
-                relay.hex == "ffffff"
-            date = datetime.datetime.utcnow()
-            utc_time = calendar.timegm(date.utctimetuple())
-            embed = disnake.Embed(title=f"`{relay.name}` | <t:{utc_time}:t>", colour=int(relay.hex, 16), description=f"{message.content}")
-            try:
-                embed.set_thumbnail(url=relay.link)
-            except:
-                embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
-            for a, i in neighbourhoodOutputs.items():
-                if relay.neighbourhood == i:
-                    await a.send(embed=embed)
 
 ## WHISPERS
 
