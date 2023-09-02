@@ -29,7 +29,7 @@ async def on_ready():
 
 ## HOST COMMANDS
 
-admin = [487045257981067289]
+admin = [703645091901866044, 667189788620619826]
 hosts = []
 canTrollbox = []
 gameChannels = "channel"
