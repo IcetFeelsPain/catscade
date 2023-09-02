@@ -2,7 +2,7 @@ import string
 import time
 import datetime
 import calendar
-import disnake
+import disnake  
 import os
 import copy
 import math
@@ -27,56 +27,13 @@ async def on_ready():
     act = Game(name="Anarchic")  
     await bot.change_presence(activity=act, status=Status.do_not_disturb)
 
-# class Relay:
-#     def __init__(self, input, player, name, link, hook) -> None:
-#         self.input:disnake.TextChannel = input
-#         self.id = len(links) + 1
-#         self.player:disnake.Member = player
-#         self.name:str = name
-#         self.avatar:str = link
-#         self.webhook:Webhook = hook
-#         links[player.id] = self
-
-# @bot.slash_command(
-#     name="create_relay",
-#     description="Create a relay from this channel",
-#     options=[
-#             Option("output", "output", OptionType.channel, True),
-#             Option("player", "player", OptionType.user, True),
-#             Option("name", "name", OptionType.string, True),
-#             Option("image_link", "image_link", OptionType.string, True)
-#         ]
-# )
-# async def relay(inter, output:disnake.TextChannel, player, name, image_link):
-#     hook = await output.create_webhook(name=str(len(links) + 1))
-#     Relay(inter.channel, player, name, image_link, hook)
-    
-#     await inter.response.send_message("Relay created!", ephemeral=True)
-
-# @bot.slash_command(
-#     name="view_relays",
-#     description="View the current relays",
-# )
-# async def view_relays(inter):
-#     embed = disnake.Embed(title="Relays")
-#     for i in links.values():
-#         i:Relay
-#         embed.add_field(f"ID `{i.id}` | `{i.name}` for {i.player.name}", f"<:hertaspin:1138251556991537233> from {i.input.mention} to {i.webhook.channel.mention}")
-    
-#     await inter.response.send_message(embed=embed)
-
-# @bot.event
-# async def on_message(message:disnake.Message):
-#     if (message.author.id in links.keys()):
-#         relay:Relay = links[message.author.id]
-#         if (message.channel.id == relay.input.id):
-#             await relay.webhook.send(content=message.content, username=relay.name, avatar_url=relay.avatar)
-
 ## HOST COMMANDS
 
 admin = [487045257981067289]
 hosts = []
 canTrollbox = []
+gameChannels = "channel"
+hostChannel = "channel"
 
 @bot.slash_command(
 name="config",
@@ -105,10 +62,22 @@ async def config(inter, player, permission):
         else:
             canTrollbox.remove(player.id)
             await inter.response.send_message(f"**{player.name}** can no longer use **Trollbox**!", ephemeral=True)
+
 @config.autocomplete("permission")
 async def autoCompleteConfig(inter, string:str):
     permissions = ["host", "trollbox"]
     return permissions
+
+@bot.slash_command(
+name="settings",
+description="View the current settings"
+)
+
+async def settings(inter):
+    if inter.author.id not in admin:
+        await inter.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return 
+    await inter.response.send_message(f"Admins - {admin}\nHosts - {hosts}", ephemeral=True)
 
 @bot.slash_command( 
 name="set_channel",
@@ -278,7 +247,7 @@ class Neighbourhood:
         self.name:str = name
         self.link:str = link
         self.hex = hex
-        links[player.id] = self
+        neighbourhoodLinks[player.id] = self
         relaynick[name] = player.id
         neighbourhoodOutputs[input] = neighbourhood
 
@@ -345,20 +314,17 @@ async def view_neighbourhoods(inter):
         await inter.response.send_message(f"This command can only be used in a host channel!", ephemeral=True)
         return
     embed = disnake.Embed(title="Neighbourhoods", colour=0xdefeff)
-    for i in links.values():
-        i:NewRelay
+    for i in neighbourhoodLinks.values():
+        i:Neighbourhood
         embed.add_field(f"ID `{i.id}` | `{i.name}` for {i.player.name}", f"<a:hertaspin:1138251556991537233> from {i.input.mention}", inline=False)
         embed.set_thumbnail(url="https://images-ext-2.discordapp.net/external/ADJGsnNezWhz-eLsDFuJOu3tr0UAZS4cExlEqz4wbQM/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/915388341736857630/4dec84b546872bf25f1fdcd7136cd934.png?width=664&height=664")
     await inter.response.send_message(embed=embed)
-
 
 ## WHISPERS
 
 whispers = {}
 whisperers = {}
 whisperChannels = {}
-gameChannels = "channel"
-hostChannel = "channel"
 whisperID = 0
 
 class Whisper:
@@ -414,7 +380,7 @@ name="add_whisper",
 description="Create a whisper channel",
     options=[
             Option("player", "player", OptionType.user, True),
-            Option("nickname", "nickname", OptionType.string, True)
+            Option("nickname", "nickname", OptionType.string, False)
         ]
 )
 
@@ -456,7 +422,6 @@ async def del_whisper(inter, id):
     del whispers[i.player.id]
     await inter.response.send_message("Whisper channel deleted!", ephemeral=True)
 
-
 @bot.slash_command( 
 name="view_whispers",
 description="View the current whisper relays"
@@ -488,7 +453,7 @@ description="Say something as another player",
 
 async def trollbox(inter, player, message):
     if inter.author.id not in canTrollbox:
-        await inter.response.send_message(f"You cannot Trollbox. Please DM the host if there is an issue.", ephemeral=True)
+        await inter.response.send_message(f"You cannot Trollbox. DM the host if there is an issue.", ephemeral=True)
     relay:NewRelay = links[relaynick[player]]
     try:
         int(relay.hex, 16)
@@ -506,7 +471,6 @@ async def trollbox(inter, player, message):
     await inter.response.send_message(f"You used the *Troll Box* on **{player}**", ephemeral=True)
     if hostChannel != "channel":
         await hostChannel.send(f"**{inter.author.name}** used **Trollbox** on **{player} ({relay.player})**: {message}")
-
 
 @trollbox.autocomplete("player")
 async def autoCompleteTrollbox(inter, string:str):
